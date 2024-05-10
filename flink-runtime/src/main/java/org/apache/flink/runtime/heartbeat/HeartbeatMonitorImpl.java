@@ -33,18 +33,26 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class HeartbeatMonitorImpl<O> implements HeartbeatMonitor<O>, Runnable {
 
-	/** Resource ID of the monitored heartbeat target. */
+	/**
+	 * Resource ID of the monitored heartbeat target.
+	 */
 	private final ResourceID resourceID;
 
-	/** Associated heartbeat target. */
+	/**
+	 * Associated heartbeat target.
+	 */
 	private final HeartbeatTarget<O> heartbeatTarget;
 
 	private final ScheduledExecutor scheduledExecutor;
 
-	/** Listener which is notified about heartbeat timeouts. */
+	/**
+	 * Listener which is notified about heartbeat timeouts.
+	 */
 	private final HeartbeatListener<?, ?> heartbeatListener;
 
-	/** Maximum heartbeat timeout interval. */
+	/**
+	 * Maximum heartbeat timeout interval.
+	 */
 	private final long heartbeatTimeoutIntervalMs;
 
 	private volatile ScheduledFuture<?> futureTimeout;
@@ -104,6 +112,7 @@ public class HeartbeatMonitorImpl<O> implements HeartbeatMonitor<O>, Runnable {
 
 	@Override
 	public void run() {
+		// 通过AtomicReference可以使用乐观锁以原子性实现判断和设置为超时，如果并发的情况下，这个判断是安全的，确保超时只触发一次
 		// The heartbeat has timed out if we're in state running
 		if (state.compareAndSet(State.RUNNING, State.TIMEOUT)) {
 			heartbeatListener.notifyHeartbeatTimeout(resourceID);
@@ -116,11 +125,14 @@ public class HeartbeatMonitorImpl<O> implements HeartbeatMonitor<O>, Runnable {
 
 	void resetHeartbeatTimeout(long heartbeatTimeout) {
 		if (state.get() == State.RUNNING) {
+			// 取消ScheduledFuture的任务
 			cancelTimeout();
 
+			// 单机少量实现的心跳可以使用schedule
 			futureTimeout = scheduledExecutor.schedule(this, heartbeatTimeout, TimeUnit.MILLISECONDS);
 
 			// Double check for concurrent accesses (e.g. a firing of the scheduled future)
+			// 非常健全的校验
 			if (state.get() != State.RUNNING) {
 				cancelTimeout();
 			}

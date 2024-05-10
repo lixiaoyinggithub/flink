@@ -34,6 +34,7 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
+# 18.启动的主类
 ENTRYPOINT=standalonesession
 
 if [[ $STARTSTOP == "start" ]] || [[ $STARTSTOP == "start-foreground" ]]; then
@@ -72,5 +73,6 @@ fi
 if [[ $STARTSTOP == "start-foreground" ]]; then
     exec "${FLINK_BIN_DIR}"/flink-console.sh $ENTRYPOINT "${args[@]}"
 else
+    # 19. 通过主类启动 standalonesession
     "${FLINK_BIN_DIR}"/flink-daemon.sh $STARTSTOP $ENTRYPOINT "${args[@]}"
 fi

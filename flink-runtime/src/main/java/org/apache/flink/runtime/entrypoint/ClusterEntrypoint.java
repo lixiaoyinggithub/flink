@@ -106,7 +106,9 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
 	private static final Time INITIALIZATION_SHUTDOWN_TIMEOUT = Time.seconds(30L);
 
-	/** The lock to guard startup / shutdown / manipulation methods. */
+	/**
+	 * The lock to guard startup / shutdown / manipulation methods.
+	 */
 	private final Object lock = new Object();
 
 	private final Configuration configuration;
@@ -153,14 +155,22 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
 	public void startCluster() throws ClusterEntrypointException {
 		LOG.info("Starting {}.", getClass().getSimpleName());
-
 		try {
-
+			// 根据配置初始化FileSystem实例
+			// LocalFileSystem 本地文件系统
+			// HadoopFileSystem 为flink封装的hadoopFileSystem
+			// 检查点的目标
 			configureFileSystems(configuration);
 
 			SecurityContext securityContext = installSecurityContext(configuration);
 
+			/**
+			 * 关于安全方面的配置
+			 */
 			securityContext.runSecured((Callable<Void>) () -> {
+				/**
+				 * 集群启动入口
+				 */
 				runCluster(configuration);
 
 				return null;
@@ -199,6 +209,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
 	private void runCluster(Configuration configuration) throws Exception {
 		synchronized (lock) {
+			// init all service include heartbeat,rp,metric,ha ……
 			initializeServices(configuration);
 
 			// write host information into configuration
@@ -238,6 +249,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 		}
 	}
 
+	// 初始化各种服务
 	protected void initializeServices(Configuration configuration) throws Exception {
 
 		LOG.info("Initializing cluster services.");
@@ -296,6 +308,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 			HighAvailabilityServicesUtils.AddressResolution.NO_ADDRESS_RESOLUTION);
 	}
 
+	// 创建心跳服务
 	protected HeartbeatServices createHeartbeatServices(Configuration configuration) {
 		return HeartbeatServices.fromConfiguration(configuration);
 	}
@@ -311,7 +324,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 		return shutDownAsync(
 			ApplicationStatus.UNKNOWN,
 			"Cluster entrypoint has been closed externally.",
-			true).thenAccept(ignored -> {});
+			true).thenAccept(ignored -> {
+		});
 	}
 
 	protected CompletableFuture<Void> stopClusterServices(boolean cleanupHaData) {
@@ -393,9 +407,9 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 	}
 
 	private CompletableFuture<ApplicationStatus> shutDownAsync(
-			ApplicationStatus applicationStatus,
-			@Nullable String diagnostics,
-			boolean cleanupHaData) {
+		ApplicationStatus applicationStatus,
+		@Nullable String diagnostics,
+		boolean cleanupHaData) {
 		if (isShutDown.compareAndSet(false, true)) {
 			LOG.info("Shutting {} down with application status {}. Diagnostics {}.",
 				getClass().getSimpleName(),
@@ -430,7 +444,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 	 * the {@link ResourceManager}.
 	 *
 	 * @param applicationStatus to terminate the application with
-	 * @param diagnostics additional information about the shut down, can be {@code null}
+	 * @param diagnostics       additional information about the shut down, can be {@code null}
 	 * @return Future which is completed once the shut down
 	 */
 	private CompletableFuture<Void> closeClusterComponent(ApplicationStatus applicationStatus, @Nullable String diagnostics) {
@@ -499,6 +513,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
 		final String clusterEntrypointName = clusterEntrypoint.getClass().getSimpleName();
 		try {
+			//
 			clusterEntrypoint.startCluster();
 		} catch (ClusterEntrypointException e) {
 			LOG.error(String.format("Could not start cluster entrypoint %s.", clusterEntrypointName), e);

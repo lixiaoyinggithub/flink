@@ -44,13 +44,25 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
 	public static void main(String[] args) {
 		// startup checks and logging
 		EnvironmentInformation.logEnvironmentInfo(LOG, StandaloneSessionClusterEntrypoint.class.getSimpleName(), args);
+
+		/**
+		 * 注册信号处理程序，与操作系统相关
+		 * 1、HUP中断信号：HUP中断信号的对应操作为让进程挂起，睡眠
+		 * 2、INT中断信号：INT中断信号的对应操作为正常关闭所有进程
+		 */
 		SignalHandler.register(LOG);
+		/**
+		 * 注册钩子，当集群出现宕机或者停止的情况，执行服务的关闭操作
+		 */
 		JvmShutdownSafeguard.installAsShutdownHook(LOG);
 
 		EntrypointClusterConfiguration entrypointClusterConfiguration = null;
 		final CommandLineParser<EntrypointClusterConfiguration> commandLineParser = new CommandLineParser<>(new EntrypointClusterConfigurationParserFactory());
 
 		try {
+			/**
+			 * 解析参数
+			 */
 			entrypointClusterConfiguration = commandLineParser.parse(args);
 		} catch (FlinkParseException e) {
 			LOG.error("Could not parse command line arguments {}.", args, e);
@@ -58,10 +70,12 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
 			System.exit(1);
 		}
 
+		// 解析集群的核心配置文件
 		Configuration configuration = loadConfiguration(entrypointClusterConfiguration);
 
+		// 创建StandaloneSessionClusterEntrypoint和启动
 		StandaloneSessionClusterEntrypoint entrypoint = new StandaloneSessionClusterEntrypoint(configuration);
-
+		// 运行集群
 		ClusterEntrypoint.runClusterEntrypoint(entrypoint);
 	}
 }

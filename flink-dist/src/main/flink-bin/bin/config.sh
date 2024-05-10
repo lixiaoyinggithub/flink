@@ -627,6 +627,7 @@ readMasters() {
     done < "$MASTERS_FILE"
 }
 
+# 12 循环读取slave文件里面的内容
 readSlaves() {
     SLAVES_FILE="${FLINK_CONF_DIR}/slaves"
 
@@ -643,7 +644,9 @@ readSlaves() {
         read line || GOON=false
         HOST=$( extractHostName $line)
         if [ -n "$HOST" ] ; then
+            # 获取所有的slave信息
             SLAVES+=(${HOST})
+            # 是否本地模式判断
             if [ "${HOST}" != "localhost" ] && [ "${HOST}" != "127.0.0.1" ] ; then
                 SLAVES_ALL_LOCALHOST=false
             fi
@@ -653,14 +656,17 @@ readSlaves() {
 
 # starts or stops TMs on all slaves
 # TMSlaves start|stop
+#  10# 启动所有的taskManager
 TMSlaves() {
     CMD=$1
 
+    #  #11. 读取slaves信息
     readSlaves
 
     if [ ${SLAVES_ALL_LOCALHOST} = true ] ; then
         # all-local setup
         for slave in ${SLAVES[@]}; do
+            # 13. 本机直接启动
             "${FLINK_BIN_DIR}"/taskmanager.sh "${CMD}"
         done
     else
@@ -669,6 +675,7 @@ TMSlaves() {
         command -v pdsh >/dev/null 2>&1
         if [[ $? -ne 0 ]]; then
             for slave in ${SLAVES[@]}; do
+              # 14. 远程启动
                 ssh -n $FLINK_SSH_OPTS $slave -- "nohup /bin/bash -l \"${FLINK_BIN_DIR}/taskmanager.sh\" \"${CMD}\" &"
             done
         else

@@ -109,8 +109,9 @@ public class HeartbeatServices {
 	public static HeartbeatServices fromConfiguration(Configuration configuration) {
 		long heartbeatInterval = configuration.getLong(HeartbeatManagerOptions.HEARTBEAT_INTERVAL);
 
+		// TIMEOUT 和interval 的option设计很有趣，在获取配置时，如果存在复杂的策略，设计一个ConfigurationOption
 		long heartbeatTimeout = configuration.getLong(HeartbeatManagerOptions.HEARTBEAT_TIMEOUT);
-
+		// 传入配置，从配置获取心跳间隔与超时时间后，
 		return new HeartbeatServices(heartbeatInterval, heartbeatTimeout);
 	}
 }

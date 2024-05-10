@@ -33,7 +33,7 @@ bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
-
+# 20. 定义变量，启动的
 ENTRYPOINT=taskexecutor
 
 if [[ $STARTSTOP == "start" ]] || [[ $STARTSTOP == "start-foreground" ]]; then

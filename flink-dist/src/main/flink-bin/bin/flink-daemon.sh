@@ -21,7 +21,7 @@
 USAGE="Usage: flink-daemon.sh (start|stop|stop-all) (taskexecutor|zookeeper|historyserver|standalonesession|standalonejob) [args]"
 
 STARTSTOP=$1
-DAEMON=$2
+DAEMON=$2 # 启动时传入的进程类型
 ARGS=("${@:3}") # get remaining arguments as array
 
 bin=`dirname "$0"`
@@ -29,6 +29,7 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
+# 根据不同的进程赋值不同的主类
 case $DAEMON in
     (taskexecutor)
         CLASS_TO_RUN=org.apache.flink.runtime.taskexecutor.TaskManagerRunner
