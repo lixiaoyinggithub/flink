@@ -258,6 +258,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 			final String bindAddress = configuration.getString(JobManagerOptions.ADDRESS);
 			final String portRange = getRPCPortRange(configuration);
 
+			// 15、创建RPC服务
 			commonRpcService = createRpcService(configuration, bindAddress, portRange);
 
 			// update the configuration used to create the high availability services
@@ -267,15 +268,19 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 			ioExecutor = Executors.newFixedThreadPool(
 				Hardware.getNumberCPUCores(),
 				new ExecutorThreadFactory("cluster-io"));
+			// 16、创建高可用服务
 			haServices = createHaServices(configuration, ioExecutor);
+			// 17、接收客户端上传的大型文件，比客户端上传的jar；RPC不适合传输
 			blobServer = new BlobServer(configuration, haServices.createBlobStore());
 			blobServer.start();
+			// 18、初始化心跳服务
 			heartbeatServices = createHeartbeatServices(configuration);
+			// 19、性能监控的服务
 			metricRegistry = createMetricRegistry(configuration);
 
 			final RpcService metricQueryServiceRpcService = MetricUtils.startMetricsRpcService(configuration, bindAddress);
 			metricRegistry.startQueryService(metricQueryServiceRpcService, null);
-
+			// 存储执行图 executionGraph的可序列化形式：基于内存或者磁盘
 			archivedExecutionGraphStore = createSerializableExecutionGraphStore(configuration, commonRpcService.getScheduledExecutor());
 		}
 	}
